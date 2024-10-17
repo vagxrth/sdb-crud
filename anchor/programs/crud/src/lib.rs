@@ -8,63 +8,36 @@ declare_id!("AsjZ3kWAUSQRNt2pZVeJkywhZ6gpLpHZmJjduPmKZDZZ");
 pub mod crud {
     use super::*;
 
-  pub fn close(_ctx: Context<CloseCrud>) -> Result<()> {
-    Ok(())
-  }
+    pub fn create_journal_entry(ctx: Context<CreateEntry>, title: String) -> Result<()> {
 
-  pub fn decrement(ctx: Context<Update>) -> Result<()> {
-    ctx.accounts.crud.count = ctx.accounts.crud.count.checked_sub(1).unwrap();
-    Ok(())
-  }
+    }
 
-  pub fn increment(ctx: Context<Update>) -> Result<()> {
-    ctx.accounts.crud.count = ctx.accounts.crud.count.checked_add(1).unwrap();
-    Ok(())
-  }
-
-  pub fn initialize(_ctx: Context<InitializeCrud>) -> Result<()> {
-    Ok(())
-  }
-
-  pub fn set(ctx: Context<Update>, value: u8) -> Result<()> {
-    ctx.accounts.crud.count = value.clone();
-    Ok(())
-  }
 }
 
 #[derive(Accounts)]
-pub struct InitializeCrud<'info> {
-  #[account(mut)]
-  pub payer: Signer<'info>,
-
+#[instruction(title: String)]
+pub struct CreateEntry<'info> {
   #[account(
-  init,
-  space = 8 + Crud::INIT_SPACE,
-  payer = payer
+    init,
+    seeds = [title.as_bytes(), owner.key().as_ref()],
+    bump,
+    space = 8 + JournalEntryState::INIT_SPACE,
+    payer = owner
   )]
-  pub crud: Account<'info, Crud>,
-  pub system_program: Program<'info, System>,
-}
-#[derive(Accounts)]
-pub struct CloseCrud<'info> {
-  #[account(mut)]
-  pub payer: Signer<'info>,
+  pub journal_entry: Account<'info, JournalEntryState>
 
-  #[account(
-  mut,
-  close = payer, // close account and return lamports to payer
-  )]
-  pub crud: Account<'info, Crud>,
-}
 
-#[derive(Accounts)]
-pub struct Update<'info> {
   #[account(mut)]
-  pub crud: Account<'info, Crud>,
+  pub owner: Signer<'info>
+  pub system_program: Program<'info, System>
 }
 
 #[account]
 #[derive(InitSpace)]
-pub struct Crud {
-  count: u8,
+pub struct JournalEntryState {
+  pub owner: Pubkey,
+  #[max_len(50)]
+  pub title: String,
+  #[max_len(500)]
+  pub message: String
 }
